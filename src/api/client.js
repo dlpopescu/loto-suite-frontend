@@ -37,12 +37,8 @@ export async function getDrawDatesAsync(daysBack) {
     return json.data || json;
 }
 
-export async function getDrawResults(game, date, useCache = true) {
-    let url = `${API_BASE}/api/draw-results?game=${encodeURIComponent(game)}&date=${encodeURIComponent(date)}`;
-    if (useCache) {   
-        url += '&use_cache';
-    }
-
+export async function getDrawResults(game, date) {
+    const url = `${API_BASE}/api/draw-results?game=${encodeURIComponent(game)}&date=${encodeURIComponent(date)}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -54,14 +50,13 @@ export async function getDrawResults(game, date, useCache = true) {
     return json.data || json;
 }
 
-export async function checkNumbers(gameId, variante, noroc, date, useCache = true) {    
+export async function checkNumbers(gameId, variante, noroc, date) {    
     const jsonPayload = JSON.stringify(
         {
             game_id: gameId,       
             variante: variante,        
             noroc: noroc,              
-            date: convertToGoDate(date),
-            use_cache: useCache
+            date: convertToGoDate(date)
         });
 
     const response = await fetch(`${API_BASE}/api/check`, {

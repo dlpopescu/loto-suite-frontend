@@ -9,22 +9,6 @@
     <table class="main-width" style="margin-top: 10px;">
       <tbody style="font-size: var(--font-size-regular);">
         <tr>
-          <td colspan="5">
-            <div style="text-align: left;display: flex;">
-              <label class="switch-label">
-                <span class="switch">
-                  <input type="checkbox" v-model="useCache" />
-                  <span class="slider"></span>
-                </span>
-                <span class="switch-text" :style="{fontWeight: useCache ? '700' : ''}">Use cache</span>
-              </label>
-              <button @click="stergeCache" style="font-family: 'Nunito'; margin-left: 10px;">
-                Clear
-              </button>      
-            </div>
-          </td>
-        </tr>
-        <tr>
           <td colspan="6" style="text-align: center;font-weight: 600;color: var(--color-success-text);letter-spacing: 0.03em; ">Joc / Data tragere:</td>
         </tr>
         <tr>
@@ -134,7 +118,6 @@ const castiguriNoroc = ref([])
 const drawDate = ref(new Date().toISOString().slice(0,10))
 // const fileInputRef = ref(null);
 // const isUploading = ref(false)
-const useCache = ref(false)
 const hasCastiguriNoroc = computed (() => castiguriNoroc.value && castiguriNoroc.value.some(c => c.win_count > 0));
 
 // onMounted(async () => {
@@ -212,8 +195,7 @@ async function verificaBilet() {
       gameId.value,
       formattedVariants,
       norocValue.value,
-      drawDate.value,
-      useCache.value
+      drawDate.value
     );
 
     console.log('Check result:', result);
@@ -318,7 +300,7 @@ async function fetchDrawResults() {
   if (!gameId.value || !drawDate.value) return;
 
   try {
-    const result = await getDrawResults(gameId.value, drawDate.value, useCache.value);
+    const result = await getDrawResults(gameId.value, drawDate.value);
     
     if (result.varianta && result.varianta.numere) {
       if (gameId.value === 'joker') {
