@@ -1,198 +1,148 @@
 <template>
-  <div class="bilet">
-    <div class="bilet-variante">
-      <div v-for="n in numarVariante" :key="n" :class="['varianta']">
-        <span style="font-size: var(--font-size-small); color:var(--color-text-primary);">{{getVariantKey(n)}}</span>
-        <div class="varianta-grids">
-          <NumberGrid 
-            :key="getVariantKey(n)"
-            :minValue="minNumarVarianta"
-            :maxValue="maxNumarVarianta"
-            :colCount="gridColumnCount"
-            :maxSelectionCount="maxSelectionCountVarianta"
-            v-model:selectedNumbers="selectedNumbers[n-1]"
-            :highlightedNumbers="matchingNumbers[n-1] || []"
-            :styling="{
-              selected: {
-                borderColor: 'var(--color-main)',
-                backgroundColor: 'var(--color-main)',
-                textColor: 'var(--color-white)'
-              },
-              highlight: {
-                borderColor: 'var(--color-success-text)',
-                backgroundColor: 'var(--color-success-text)',
-                textColor: 'var(--color-white)'
-              }
-            }"
-          />
-          <div v-if="gameId === 'joker'">
-            <NumberGrid 
-              :minValue="minNumarJoker"
-              :maxValue="maxNumarJoker"
-              :colCount="gridColumnCount"
-              :maxSelectionCount="maxSelectionCountJoker"
-              v-model:selectedNumbers="selectedJokerNumbers[n-1]"
-              :highlightedNumbers="matchingJokerNumbers[n-1] || []"
-              :styling="{
-                regular: {
-                  borderColor: 'var(--color-joker)',
-                  backgroundColor: 'var(--color-white)',
-                  textColor: 'var(--color-joker)'
-                },
-                selected: {
-                  borderColor: 'var(--color-joker)',
-                  backgroundColor: 'var(--color-joker)',
-                  textColor: 'var(--color-white)'
-                },
-                highlight: {
-                  borderColor: 'var(--color-success-text)',
-                  backgroundColor: 'var(--color-success-text)',
-                  textColor: 'var(--color-white)'
-                }
-              }"
-            />
-          </div>
-        </div>
+    <div class="bilet">
+      <div class="bilet-variante">
+        <Varianta 
+          v-for="n in numarVariante" 
+          :id="n" 
+          @update-selection="doOnVariantSelectionsUpdated"
+          ref="varianteRefs" />
       </div>
-    </div>    
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
-      <Noroc 
-        ref="norocRef"
-        v-model="norocModel" 
-        :max-length="norocLen"
-        :label="norocGameName"
-        :castigator="norocCastigator"/>
-      <div style="border-left: 1px dashed var(--color-text-secondary);">
-        <!-- <button class="bilet-button bilet-button-scan" style="margin-left: 2px; " @click="scaneazaBilet">Scaneaza</button> -->
-        <button class="bilet-button" @click="scaneazaBilet" style="margin-left: 8px;">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M20 5h-3.2l-1.8-2H9L7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-8 14a5 5 0 1 1 5-5a5 5 0 0 1-5 5m0-8a3 3 0 1 0 3 3a3 3 0 0 0-3-3Z"/>
-          </svg>
-        </button>  
-        <button class="bilet-button bilet-button-sterge" @click="stergeBilet" style="margin-left: 4px;">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M9 3v1H4v2h16V4h-5V3H9m1 5v10h2V8h-2m4 0v10h2V8h-2z"/>
-          </svg>
-        </button>        
-        <button class="bilet-button bilet-button-verifica" style="margin-left: 4px;margin-right: 8px;" @click="verificaBilet">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2m-1 15l-4-4l1.41-1.41L11 13.17l4.59-4.59L17 10l-6 7z"/>
-          </svg>
-        </button>
-        <!-- <button class="bilet-button bilet-button-verifica" style="margin-left: 2px; margin-right: 4px;" @click="verificaBilet">Verifica</button> -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+        <div class="noroc-container">
+          <span style="font-size: var(--font-size-small); color:var(--color-text-primary); ">{{norocGameName}}</span>
+          <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            ref="norocInputRef"
+            :maxlength="norocLen"
+            :class="['noroc-input', { 'castigator': norocCastigator }]"
+            @input="onNorocInput"
+            autocomplete="off"/>
+        </div>
+        <div style="border-left: 1px dashed var(--color-text-secondary);">
+          <button class="bilet-button" @click="scaneazaBilet" style="margin-left: 8px;">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M20 5h-3.2l-1.8-2H9L7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-8 14a5 5 0 1 1 5-5a5 5 0 0 1-5 5m0-8a3 3 0 1 0 3 3a3 3 0 0 0-3-3Z"/>
+            </svg>
+          </button>  
+          <button class="bilet-button bilet-button-sterge" @click="stergeBilet" style="margin-left: 4px;">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M9 3v1H4v2h16V4h-5V3H9m1 5v10h2V8h-2m4 0v10h2V8h-2z"/>
+            </svg>
+          </button>  
+          <button class="bilet-button bilet-button-verifica" style="margin-left: 4px;margin-right: 8px;" @click="verificaBilet">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2m-1 15l-4-4l1.41-1.41L11 13.17l4.59-4.59L17 10l-6 7z"/>
+            </svg>
+          </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+  
 import { ref, computed, onMounted, watch } from 'vue'
-import NumberGrid from './NumberGrid.vue'
-import Noroc from './Noroc.vue'
+import { useLotoStore } from '../stores/loto_store'
+import { isFunction } from '../utils/utils'
+import Varianta from './Varianta.vue'
 
-const props = defineProps({
-  game: {
-    type: Object,
-    default: () => ({})
-  },
-  norocValue: {
-    type: String,
-    default: ''
-  }
-})
-
-const norocRef = ref(null)
-const selectedNumbers = ref([])
-const selectedJokerNumbers = ref([])
-const matchingNumbers = ref([])
-const matchingJokerNumbers = ref([])
+const lotoStore = useLotoStore()
+const norocInputRef = ref(null)
+const ticketSelections = ref([])
 const norocCastigator = ref(false)
+const varianteRefs = ref([]);
+// const matchingNumbers = ref([])
+// const matchingJokerNumbers = ref([])
 
-const emit = defineEmits(['noroc-changed', 'sterge-bilet', 'verifica-bilet'])
+const selectedGame = computed(() => lotoStore.selectedGame || {})
+const norocGameName = computed(() => selectedGame.value.nume_noroc || 'NOROC')
+const norocLen = computed(() => selectedGame.value.numar_cifre_noroc || 7)
+const numarVariante = computed(() =>  selectedGame.value.numar_max_variante || 1)
+
+const emit = defineEmits(['check', 'delete', 'scan'])
 
 defineExpose({
-  highlightNumbers,
+  // highlightNumbers,
   setNorocCastigator,
-  reset,
-  getSelections: () => ({
-    variants: selectedNumbers.value,
-    jokers: selectedJokerNumbers.value,
-    noroc: props.norocValue
-  })
+  reset
 })
 
 onMounted(() => {
   reset()
 })
 
-watch(() => props.game?.id, (newGameId, oldGameId) => {
-  if (newGameId !== oldGameId) {
-    reset()
-  }
+watch(() =>  lotoStore.gameId, (newGameId, oldGameId) => {
+  if (newGameId && newGameId !== oldGameId) {
+      reset()
+    }
 }, { immediate: true })
 
 function setNorocCastigator(isWinner) {
   norocCastigator.value = isWinner
 }
 
-function highlightNumbers(mainNumbers, jokerNumbers) {
-  matchingNumbers.value = mainNumbers || []
-  matchingJokerNumbers.value = jokerNumbers || []
-}
+// function highlightNumbers(mainNumbers, jokerNumbers) {
+//   matchingNumbers.value = mainNumbers || []
+//   matchingJokerNumbers.value = jokerNumbers || []
+// }
 
 function reset() {
-  const numVariants = numarVariante.value 
-  selectedNumbers.value = Array(numVariants).fill().map(() => [])
-  selectedJokerNumbers.value = Array(numVariants).fill().map(() => [])
-  highlightNumbers(null, null);
-  
-  if (norocRef.value) {
-    norocRef.value.clearInput()
+  ticketSelections.value = []
+  norocCastigator.value = false
+
+  varianteRefs.value.forEach(varianta => {
+    if (varianta && isFunction(varianta.clearSelections)) {
+      varianta.clearSelections();
+    }
+  });
+
+  if (norocInputRef.value) {
+    norocInputRef.value.value = '';
   }
-}
 
-const gameId = computed(() => props.game?.id || '')
-const norocGameName = computed(() => props.game?.nume_noroc || 'NOROC')
-const norocLen = computed(() => props.game?.numar_cifre_noroc || 7)
-const numarVariante = computed(() =>  props.game?.numar_max_variante || 1)
-const minNumarVarianta = computed(() =>  props.game?.min_value_numar_varianta || 1)
-const maxNumarVarianta = computed(() =>  props.game?.max_value_numar_varianta || 49)
-const gridColumnCount = computed( () => {
-  return 10;
-})
-
-const minNumarJoker = computed (() => 1)
-const maxNumarJoker = computed (() => 20)
-const maxSelectionCountVarianta = computed (() => maxNumarVarianta.value - 1)
-const maxSelectionCountJoker = computed (() => 1)
-
-const norocModel = computed({
-  get() {
-    return props.norocValue
-  },
-  set(value) {
-    emit('noroc-changed', value)
-  }
-})
-
-function getVariantKey (index) {
-  return String.fromCharCode(64 + index);
+  // highlightNumbers(null, null);
 }
 
 function stergeBilet() {
   reset();
-  emit('sterge-bilet')
+  emit('delete')
 }
 
 function scaneazaBilet() {
-  reset();
+  // reset();
+  // emit('scan')
 }
 
 function verificaBilet() {
-  emit('verifica-bilet')
+  emit(
+    'check', 
+    {
+      variants: ticketSelections.value,
+      noroc: norocInputRef.value.value
+    })
+}
+
+function onNorocInput(e) {
+  const val = e.target.value.replace(/[^0-9]/g, '');
+  norocInputRef.value.value = val;
+  norocCastigator.value = false;
+}
+
+function doOnVariantSelectionsUpdated(selections) {
+  const idx = ticketSelections.value.findIndex(s => s.variant_id === selections.variant_id);
+
+  if (idx !== -1) {
+    ticketSelections.value[idx] = selections;
+  } else {
+    ticketSelections.value.push(selections);
+  }
+
+  // console.log('Bilet selections updated:', ticketSelections.value);
 }
 
 </script>
@@ -215,9 +165,7 @@ function verificaBilet() {
 
 .varianta {
   border-bottom: 1px dashed var(--color-text-secondary);
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-right: 8px;
+  padding: 8px;
   width: auto;
   max-width: max-content;
   display: flex;
@@ -225,10 +173,9 @@ function verificaBilet() {
 
 .varianta span {
   /* width: 26px; */
-  padding-left: 4px;
-  padding-right: 8px;
   text-align: center;
-  font-weight: 700;
+  /* font-weight: 700; */
+  padding-right: 2px;
   align-self: center;
 }
 
@@ -285,6 +232,30 @@ function verificaBilet() {
 .bilet-button-verifica:hover {
   background: var(--color-success-text);
   color: var(--color-white);
+  border: 1px solid var(--color-success-text);
+}
+
+.noroc-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+}
+
+.noroc-input {
+  font-size: var(--font-size-small);
+  width: 100px;
+  text-align: center;
+  box-sizing: border-box;
+  font-family: "Fira Mono", monospace;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid var(--color-main);
+}
+
+.noroc-input.castigator {
+  color: var(--color-white);
+  background: var(--color-success-text);
   border: 1px solid var(--color-success-text);
 }
 

@@ -1,10 +1,27 @@
-// API Client - Clean ES6 module for backend communication
 
 // API_BASE configured for production backend
 const API_BASE = 'https://dlpopescu.ro';
 
-// Cache for games to avoid repeated API calls
-let gamesCache = null;
+let jwtToken = null;
+
+export async function Login(user, password) {
+    console.log('Found JWT token: ' + jwtToken);
+    if (jwtToken) return;
+
+    const response = await send(
+        'POST', 
+        `${API_BASE}/api/login`, 
+        JSON.stringify({ username: user, password: btoa(password) }), 
+        // JSON.stringify({ username: 'dlpopescu', password: btoa('o:mK!4*yR0Os`C3\'') }), 
+        { 'Content-Type': 'application/json' }, 
+        false);
+
+    if (!response.ok) throw new Error('Login failed');
+    const tokenData = await response.json();
+    jwtToken = tokenData.data.token;
+
+    return response;
+}
 
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -16,12 +33,17 @@ function arrayBufferToBase64(buffer) {
 }
 
 export async function getAllGames() {
-    if (gamesCache) return gamesCache;
-    const response = await fetch(`${API_BASE}/api/games`);
+    const response = await send(
+        'GET', 
+        `${API_BASE}/api/games`, 
+        null, 
+        {}, 
+        true);
+
     if (!response.ok) throw new Error('Failed to fetch games');
+    
     const json = await response.json();
-    gamesCache = json.data || json;
-    return gamesCache;
+    return json.data || json;
 }
 
 export async function getGameById(gameId) {
@@ -29,17 +51,26 @@ export async function getGameById(gameId) {
     return allGames.find(g => g.id === gameId);
 }
 
-export async function getDrawDatesAsync(daysBack) {
-    const url = `${API_BASE}/api/draw-dates?days_back=${daysBack}`;
-    const response = await fetch(url);
+export async function getDrawDates(daysBack) {
+    const response = await send(
+        'GET', 
+        `${API_BASE}/api/draw-dates?days_back=${daysBack}`, 
+        null, 
+        {}, 
+        true);
+
     if (!response.ok) throw new Error('Failed to fetch draw dates');
     const json = await response.json();
     return json.data || json;
 }
 
 export async function getDrawResults(game, date) {
-    const url = `${API_BASE}/api/draw-results?game=${encodeURIComponent(game)}&date=${encodeURIComponent(date)}`;
-    const response = await fetch(url);
+    const response = await send(
+        'GET', 
+        `${API_BASE}/api/draw-results?game=${encodeURIComponent(game)}&date=${encodeURIComponent(date)}`, 
+        null, 
+        {}, 
+        true);
 
     if (!response.ok) {
         const error = await response.json();
@@ -50,20 +81,21 @@ export async function getDrawResults(game, date) {
     return json.data || json;
 }
 
-export async function checkNumbers(gameId, variante, noroc, date) {    
+export async function checkNumbers(gameId, variante, noroc, date) {   
     const jsonPayload = JSON.stringify(
         {
             game_id: gameId,       
             variante: variante,        
             noroc: noroc,              
-            date: convertToGoDate(date)
+            date: date
         });
 
-    const response = await fetch(`${API_BASE}/api/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonPayload
-    });
+    const response = await send(
+        'POST', 
+        `${API_BASE}/api/check`, 
+        jsonPayload, 
+        { 'Content-Type': 'application/json' }, 
+        true);
 
     if (!response.ok) {
         const error = await response.json();
@@ -76,24 +108,14 @@ export async function checkNumbers(gameId, variante, noroc, date) {
     return checkResult;
 }
 
-// export async function clearCache() {    
-//     const response = await fetch(`${API_BASE}/api/clear-cache`, {
-//         method: 'POST'
-//     });
-
-//     if (!response.ok) {
-//         const error = await response.json();
-//         throw new Error(error.error || 'Failed to clear cache');
-//     }
-// }
-
 export async function scanTicket(gameId, imageData) {
-    const base64 = arrayBufferToBase64(imageData);
-    const response = await fetch(`${API_BASE}/api/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: gameId, image_data: base64 })
-    });
+    const response = await send(
+        'POST', 
+        `${API_BASE}/api/scan`, 
+        JSON.stringify({ game_id: gameId, image_data: arrayBufferToBase64(imageData) }), 
+        { 'Content-Type': 'application/json' }, 
+        true);
+
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to scan ticket');
@@ -101,7 +123,21 @@ export async function scanTicket(gameId, imageData) {
     return await response.json();
 }
 
-function convertToGoDate(dateStr) {
-  const [year, month, day] = dateStr.split('-');
-  return `${day}.${month}.${year}`;
+async function send(method, url, body, extraHeaders, authenticate = true) {
+    const headers = { ...extraHeaders };
+
+    if (authenticate) {
+        headers['Authorization'] = `Bearer ${jwtToken}`;
+    }
+
+    console.log('Fetching from URL: ' + url);
+    const response = await fetch(url, {
+        method: method,
+        headers: headers,
+        body: body
+    });
+
+    console.log(`API ${method} ${url} responded with status ${response.status}`);
+
+    return response;
 }

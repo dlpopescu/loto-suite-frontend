@@ -26,7 +26,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatNumberWithDecimals } from '../utils/formatters'
+import { formatNumberWithDecimals } from '../utils/utils'
 
 const props = defineProps({
   castiguriVarianta: {

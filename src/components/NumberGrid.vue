@@ -5,7 +5,7 @@
       :key="number"
       :class="['number-cell', 
         { 
-            'selected': selectedNumbers.includes(number), 
+            'selected': internalSelected.includes(number), 
             'highlighted': highlightedNumbers.includes(number)
         }
         ]"
@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   minValue: {
@@ -36,10 +36,6 @@ const props = defineProps({
     type: Number,
     default: undefined
   },
-  selectedNumbers: {
-    type: Array,
-    default: () => []
-  },
   styling: {
     type: Object,
     default: () => ({})
@@ -47,12 +43,16 @@ const props = defineProps({
   highlightedNumbers: {
     type: Array,
     default: () => []
+  },
+  variantId: {
+    type: Number,
+    default: 1
   }
 })
 
-const emit = defineEmits(['update:selectedNumbers'])
+const emit = defineEmits(['update:modelValue'])
 
-const internalSelected = ref([...props.selectedNumbers])
+const internalSelected = ref([])
 
 const numbers = computed(() =>
   Array.from({ length: props.maxValue - props.minValue + 1 }, (_, i) => i + props.minValue)
@@ -101,10 +101,6 @@ const getCellStyling = (number) => {
   }
 }
 
-watch(() => props.selectedNumbers, (newVal) => {
-  internalSelected.value = [...newVal]
-}, { deep: true })
-
 function toggleNumber(number) {
   const index = internalSelected.value.indexOf(number)
   
@@ -119,18 +115,18 @@ function toggleNumber(number) {
   }
   
   internalSelected.value.sort((a, b) => a - b)
-  
-  emit('update:selectedNumbers', [...internalSelected.value])
+  emit('update:modelValue', [...internalSelected.value])
 }
 
-function clearSelection() {
+function clearSelections() {
   internalSelected.value = []
-  emit('update:selectedNumbers', [])
+  emit('update:modelValue', [...internalSelected.value])
 }
 
 defineExpose({
-  clearSelection,
+  clearSelections,
 })
+
 </script>
 
 <style scoped>
